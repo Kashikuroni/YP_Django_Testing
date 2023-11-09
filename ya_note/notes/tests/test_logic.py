@@ -3,6 +3,7 @@ from http import HTTPStatus
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.urls import reverse
+from django.core.exceptions import ObjectDoesNotExist
 
 from pytils.translit import slugify
 from notes.models import Note
@@ -14,6 +15,7 @@ User = get_user_model()
 class TestNoteAddEditDelete(TestCase):
     NOTE_TEXT = 'Текст комментария'
     NEW_NOTE_TEXT = 'Обновлённый комментарий'
+    TEST_SLUG = 3
 
     @classmethod
     def setUpTestData(cls):
@@ -41,13 +43,37 @@ class TestNoteAddEditDelete(TestCase):
 
     def test_author_can_add(self):
         """Залогиненный пользователь может создать заметку."""
-        response = self.author_client.get(self.add_url)
-        self.assertEqual(response.status_code, HTTPStatus.OK)
+        form_data = {
+            'title': f'Заметка №{3}',
+            'text': self.NOTE_TEXT,
+            'slug': self.TEST_SLUG,
+        }
+        response = self.author_client.post(self.add_url, data=form_data)
+        self.assertRedirects(response, self.success_url)
+
+        found = False
+        try:
+            Note.objects.get(slug=self.TEST_SLUG)
+            found = True
+        except ObjectDoesNotExist:
+            ...
+        self.assertTrue(found)
 
     def test_anonym_cant_add(self):
         """Анонимный не может создать заметку."""
-        response = self.client.get(self.add_url)
-        self.assertEqual(response.status_code, HTTPStatus.FOUND)
+        form_data = {
+            'title': f'Заметка №{3}',
+            'text': self.NOTE_TEXT,
+            'slug': self.TEST_SLUG,
+        }
+        self.client.post(self.add_url, data=form_data)
+        found = False
+        try:
+            Note.objects.get(slug=self.TEST_SLUG)
+            found = True
+        except ObjectDoesNotExist:
+            ...
+        self.assertFalse(found)
 
     def test_is_not_possible_create_two_notes_same_slug(self):
         """Невозможно создать две заметки с одинаковым slug."""

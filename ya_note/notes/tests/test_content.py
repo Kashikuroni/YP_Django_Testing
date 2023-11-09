@@ -36,13 +36,15 @@ class TestListPage(TestCase):
         ]
         Note.objects.bulk_create(another_author_notes)
 
+    def setUp(self) -> None:
+        self.client.force_login(self.author)
+
     def test_notes_in_object_list(self):
         """
         Отдельная заметка передаётся на страницу со списком
         заметок в списке `object_list` в словаре `context`.
         """
         url = reverse('notes:list')
-        self.client.force_login(self.author)
         response = self.client.get(url)
         self.assertIn('object_list', response.context)
 
@@ -52,7 +54,6 @@ class TestListPage(TestCase):
         не попадают заметки другого пользователя.
         """
         url = reverse('notes:list')
-        self.client.force_login(self.author)
         response = self.client.get(url)
         notes = response.context['object_list']
         all_authors = [note.author for note in notes]
