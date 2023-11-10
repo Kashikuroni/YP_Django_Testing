@@ -123,7 +123,7 @@ def test_user_cant_edit_another_comment(
     edit_url = reverse('news:edit', args=comment_id_for_args)
     response = reader_client.post(edit_url, data=form_data)
     assert response.status_code == HTTPStatus.NOT_FOUND
-    
+
     found = False
     try:
         comment = Comment.objects.get(id=comment_id_for_args[0])
