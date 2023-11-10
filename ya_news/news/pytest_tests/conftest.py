@@ -1,5 +1,6 @@
 # conftest.py
 import pytest
+
 from datetime import datetime, timedelta
 
 from django.conf import settings
@@ -78,15 +79,12 @@ def create_news_grt_them_limit() -> None:
 def create_comment_grt_them_limit(news, author) -> None:
     now = timezone.now()
     for index in range(3):
-        # Создаём объект и записываем его в переменную.
         comment = Comment.objects.create(
             news=news,
             author=author,
             text=f'Текст {index}',
         )
-        # Сразу после создания меняем время создания комментария.
         comment.created = now + timedelta(days=index)
-        # И сохраняем эти изменения.
         comment.save()
 
 
@@ -96,6 +94,12 @@ def detail_url(news_id_for_args) -> str:
         'news:detail',
         args=news_id_for_args
     )
+    return url
+
+
+@pytest.fixture
+def home_url() -> str:
+    url = reverse('news:home')
     return url
 
 
