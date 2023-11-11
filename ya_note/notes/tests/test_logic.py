@@ -4,8 +4,8 @@ from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.urls import reverse
 from django.core.exceptions import ObjectDoesNotExist
-
 from pytils.translit import slugify
+
 from notes.models import Note
 from notes.forms import WARNING
 
@@ -19,19 +19,14 @@ class TestNoteAddEditDelete(TestCase):
 
     @classmethod
     def setUpTestData(cls):
-        cls.author_client = Client()
         cls.author = User.objects.create(username='Лев Толстой')
+        cls.reader = User.objects.create(username='Читатель')
         cls.note = Note.objects.create(
             title=f'Заметка №{1}',
             text=cls.NOTE_TEXT,
             slug=1,
             author=cls.author,
         )
-        cls.author_client.force_login(cls.author)
-
-        cls.reader = User.objects.create(username='Читатель')
-        cls.reader_client = Client()
-        cls.reader_client.force_login(cls.reader)
 
         cls.success_url = reverse('notes:success')
         cls.add_url = reverse('notes:add')
@@ -40,6 +35,13 @@ class TestNoteAddEditDelete(TestCase):
         cls.form_data = {
             'text': cls.NEW_NOTE_TEXT,
         }
+
+    def setUp(self) -> None:
+        self.author_client = Client()
+        self.author_client.force_login(self.author)
+
+        self.reader_client = Client()
+        self.reader_client.force_login(self.reader)
 
     def test_author_can_add(self):
         """Залогиненный пользователь может создать заметку."""

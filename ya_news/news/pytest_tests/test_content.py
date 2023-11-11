@@ -1,5 +1,4 @@
 import pytest
-
 from django.conf import settings
 
 from news.forms import CommentForm
@@ -49,5 +48,6 @@ def test_anonymous_client_has_no_form(client, detail_url):
 def test_authorized_client_has_form(author_client, detail_url):
     """Тестируем доступ авторизованного пользователя к форме комментария."""
     response = author_client.get(detail_url)
+    assert 'form' in response.context
     form = response.context['form']
-    assert form.__class__ == CommentForm
+    assert isinstance(form, CommentForm)

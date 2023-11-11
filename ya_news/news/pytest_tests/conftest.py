@@ -89,22 +89,37 @@ def create_comment_grt_them_limit(news, author) -> None:
 
 
 @pytest.fixture
-def detail_url(news_id_for_args) -> str:
-    url = reverse(
-        'news:detail',
-        args=news_id_for_args
-    )
-    return url
-
-
-@pytest.fixture
 def home_url() -> str:
     url = reverse('news:home')
     return url
 
 
 @pytest.fixture
-def url_to_comments(news_id_for_args):
+def detail_url(news_id_for_args) -> str:
+    url = reverse('news:detail', args=news_id_for_args)
+    return url
+
+
+@pytest.fixture
+def edit_url(comment_id_for_args) -> str:
+    url = reverse('news:edit', args=comment_id_for_args)
+    return url
+
+
+@pytest.fixture
+def delete_url(comment_id_for_args) -> str:
+    url = reverse('news:delete', args=comment_id_for_args)
+    return url
+
+
+@pytest.fixture
+def url_to_comments(news_id_for_args) -> str:
     news_url = reverse('news:detail', args=news_id_for_args)
     url_to_comments = news_url + '#comments'
     return url_to_comments
+
+
+@pytest.fixture
+def comments_list():
+    comment_list = Comment.objects.all()
+    return comment_list

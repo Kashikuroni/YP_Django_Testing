@@ -1,10 +1,11 @@
 from http import HTTPStatus
 
-from django.test import TestCase
+from django.test import Client, TestCase
 from django.urls import reverse
 from django.contrib.auth import get_user_model
 
 from notes.models import Note
+from notes.forms import NoteForm
 
 
 User = get_user_model()
@@ -37,7 +38,8 @@ class TestListPage(TestCase):
         Note.objects.bulk_create(another_author_notes)
 
     def setUp(self) -> None:
-        self.client.force_login(self.author)
+        self.authorize_client = Client()
+        self.authorize_client.force_login(self.author)
 
     def test_notes_in_object_list(self):
         """
@@ -45,7 +47,7 @@ class TestListPage(TestCase):
         заметок в списке `object_list` в словаре `context`.
         """
         url = reverse('notes:list')
-        response = self.client.get(url)
+        response = self.authorize_client.get(url)
         self.assertIn('object_list', response.context)
 
     def test_notes_list_not_include_dif_authors(self):
@@ -54,7 +56,7 @@ class TestListPage(TestCase):
         не попадают заметки другого пользователя.
         """
         url = reverse('notes:list')
-        response = self.client.get(url)
+        response = self.authorize_client.get(url)
         notes = response.context['object_list']
         all_authors = [note.author for note in notes]
         diff = [author for author in all_authors if author != self.author]
@@ -73,12 +75,18 @@ class TestDetailPage(TestCase):
         )
         cls.edit_url = reverse('notes:edit', args=(cls.note.slug,))
 
+    def setUp(self) -> None:
+        self.authorize_client = Client()
+        self.authorize_client.force_login(self.author)
+
     def test_anonymous_client_has_no_form(self):
+        """Анонимный пользователь не получает форму."""
         response = self.client.get(self.edit_url)
         self.assertEqual(response.status_code, HTTPStatus.FOUND)
 
     def test_authorized_client_has_form(self):
         """На страницы создания и редактирования заметки передаются формы."""
-        self.client.force_login(self.author)
-        response = self.client.get(self.edit_url)
+        response = self.authorize_client.get(self.edit_url)
         self.assertIn('form', response.context)
+        form = response.context['form']
+        self.assertTrue(isinstance(form, NoteForm))
