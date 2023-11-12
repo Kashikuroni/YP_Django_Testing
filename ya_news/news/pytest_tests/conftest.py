@@ -123,3 +123,19 @@ def url_to_comments(news_id_for_args) -> str:
 def comments_list():
     comment_list = Comment.objects.all()
     return comment_list
+
+
+@pytest.fixture
+def create_comment_form():
+    form_data = {
+        'text': 'Текст Тестового Комментария.'
+    }
+    return form_data
+
+
+@pytest.fixture
+def change_comment_form():
+    form_data = {
+        'text': 'Текс, просто текст. Этого достаточно.'
+    }
+    return form_data
