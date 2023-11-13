@@ -166,11 +166,12 @@ class TestNoteSlug(TestCase):
         response = self.author_client.post(url, data=form_data)
 
         self.assertRedirects(response, reverse('notes:success'))
-        
+
         new_note = Note.objects.get()
         expected_slug = slugify(form_data['title'])
         note_empty_slug_is_exists = Note.objects.filter(
             slug=expected_slug
         ).exists()
+
         self.assertTrue(note_empty_slug_is_exists)
         self.assertEqual(new_note.slug, expected_slug)
