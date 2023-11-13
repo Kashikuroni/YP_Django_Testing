@@ -1,20 +1,16 @@
-# news/tests/test_routes.py
 from http import HTTPStatus
 
-# Импортируем функцию для определения модели пользователя.
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
-# Импортируем класс комментария.
 from notes.models import Note
 
-# Получаем модель пользователя.
 User = get_user_model()
 
 
 class TestRoutes(TestCase):
-
+    """Тесты для маршрутизации."""
     @classmethod
     def setUpTestData(cls):
         cls.author = User.objects.create(username='Лев Толстой')
@@ -27,6 +23,7 @@ class TestRoutes(TestCase):
         )
 
     def test_pages_availability(self):
+        """Проверяем доступность страниц."""
         urls = (
             ('notes:home', None, HTTPStatus.OK),
             ('notes:detail', (self.note.slug,), HTTPStatus.FOUND),
@@ -41,6 +38,7 @@ class TestRoutes(TestCase):
                 self.assertEqual(response.status_code, status)
 
     def test_availability_for_auth_client(self):
+        """Проверяем доступность страниц авторизованному пользователю."""
         names = ('notes:list', 'notes:add', 'notes:list')
         self.client.force_login(self.author)
         for name in names:
@@ -50,6 +48,10 @@ class TestRoutes(TestCase):
                 self.assertEqual(response.status_code, HTTPStatus.OK)
 
     def test_availability_for_note_edit_and_delete(self):
+        """
+        Проверяем доступность к страницам редактирования
+        для разных пользователей.
+        """
         users_statuses = (
             (self.author, HTTPStatus.OK),
             (self.reader, HTTPStatus.NOT_FOUND),
@@ -67,6 +69,7 @@ class TestRoutes(TestCase):
                     self.assertEqual(response.status_code, status)
 
     def test_redirect_for_anonymous_client(self):
+        """Проверка переадресации."""
         names = (
             ('notes:list', None),
             ('notes:add', None),
