@@ -16,6 +16,7 @@ class TestNoteAddEditDelete(TestCase):
     NOTE_TEXT = 'Текст комментария'
     NEW_NOTE_TEXT = 'Обновлённый комментарий'
     TEST_SLUG = 3
+    SLUG = '1'
 
     @classmethod
     def setUpTestData(cls):
@@ -24,7 +25,7 @@ class TestNoteAddEditDelete(TestCase):
         cls.note = Note.objects.create(
             title='Заметка №1',
             text=cls.NOTE_TEXT,
-            slug='1',
+            slug=cls.SLUG,
             author=cls.author,
         )
 
@@ -66,12 +67,15 @@ class TestNoteAddEditDelete(TestCase):
 
     def test_anonym_cant_add(self):
         """Анонимный не может создать заметку."""
+        start_notes_count = Note.objects.all().count()
         self.client.post(self.add_url, data=self.create_note_form_data)
         comment_is_exists = Note.objects.filter(
             slug=self.TEST_SLUG
         ).exists()
 
+        end_notes_count = Note.objects.all().count()
         self.assertFalse(comment_is_exists)
+        self.assertEqual(start_notes_count, end_notes_count)
 
     def test_is_not_possible_create_two_notes_same_slug(self):
         """Невозможно создать две заметки с одинаковым slug."""
@@ -131,21 +135,15 @@ class TestNoteAddEditDelete(TestCase):
 
     def test_user_cant_edit_note_of_another_user(self):
         """Пользователь не может редактировать чужую заметку."""
+        before_note = Note.objects.get(slug=self.SLUG)
         response = self.reader_client.post(
             self.edit_url, data=self.edit_note_form_data
         )
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
         self.note.refresh_from_db()
-        form_data = {
-            "title": 'Заметка №1',
-            "text": self.NOTE_TEXT,
-            "slug": '1',
-            "author": self.author,
-        }
-        self.assertEqual(self.note.text, form_data['text'])
-        self.assertEqual(self.note.title, form_data['title'])
-        self.assertEqual(self.note.slug, form_data['slug'])
-        self.assertEqual(self.note.author, form_data['author'])
+
+        after_note = Note.objects.get(slug=self.SLUG)
+        self.assertEqual(after_note, before_note)
 
 
 class TestNoteSlug(TestCase):
@@ -167,8 +165,11 @@ class TestNoteSlug(TestCase):
 
         self.assertRedirects(response, reverse('notes:success'))
 
-        new_note = Note.objects.get()
+        new_note = Note.objects.filter(
+            title=form_data['title'], text=form_data['text']
+        ).last()
         expected_slug = slugify(form_data['title'])
+
         note_empty_slug_is_exists = Note.objects.filter(
             slug=expected_slug
         ).exists()

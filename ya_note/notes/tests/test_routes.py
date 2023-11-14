@@ -1,7 +1,7 @@
 from http import HTTPStatus
 
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import TestCase, Client
 from django.urls import reverse
 
 from notes.models import Note
@@ -22,6 +22,13 @@ class TestRoutes(TestCase):
             author=cls.author
         )
 
+    def setUp(self) -> None:
+        self.author_client = Client()
+        self.author_client.force_login(self.author)
+
+        self.reader_client = Client()
+        self.reader_client.force_login(self.reader)
+
     def test_pages_availability(self):
         """Проверяем доступность страниц."""
         urls = (
@@ -40,11 +47,10 @@ class TestRoutes(TestCase):
     def test_availability_for_auth_client(self):
         """Проверяем доступность страниц авторизованному пользователю."""
         names = ('notes:list', 'notes:add', 'notes:list')
-        self.client.force_login(self.author)
         for name in names:
             with self.subTest(name=name):
                 url = reverse(name)
-                response = self.client.get(url)
+                response = self.author_client.get(url)
                 self.assertEqual(response.status_code, HTTPStatus.OK)
 
     def test_availability_for_note_edit_and_delete(self):
@@ -53,19 +59,16 @@ class TestRoutes(TestCase):
         для разных пользователей.
         """
         users_statuses = (
-            (self.author, HTTPStatus.OK),
-            (self.reader, HTTPStatus.NOT_FOUND),
+            (self.author_client, HTTPStatus.OK),
+            (self.reader_client, HTTPStatus.NOT_FOUND),
         )
-        for user, status in users_statuses:
-
-            self.client.force_login(user)
-
+        for custom_client, status in users_statuses:
             for name in ('notes:edit', 'notes:delete'):
-                with self.subTest(user=user, name=name):
+                with self.subTest(custom_client=custom_client, name=name):
                     url = reverse(
                         'notes:detail', kwargs={'slug': self.note.slug}
                     )
-                    response = self.client.get(url)
+                    response = custom_client.get(url)
                     self.assertEqual(response.status_code, status)
 
     def test_redirect_for_anonymous_client(self):
